@@ -1,13 +1,26 @@
 //import { DatabaseMemory } from "./database-memory.js"
 import { DatabasePostgres } from "./database-postgres.js"
 import { fastify } from "fastify"
+import fastifyJwt from '@fastify/jwt'
+import bcrypt from "bcrypt"
 
 
 const database = new DatabasePostgres()
-
 const server = fastify()
 
-server.post('/videos', async (req, res) => {
+server.register(fastifyJwt, {
+    secret: process.env.SECRET
+})
+
+server.decorate("authenticate", async (req, res) => {
+    try {
+        await req.jwtVerify()
+    } catch (error) {
+        return res.status(401).send({msg: error})
+    }
+})
+
+server.post('/videos', {onRequest: [server.authenticate]}, async (req, res) => {
     const {title, description, duration} = req.body
     
     await database.create({
@@ -45,6 +58,61 @@ server.delete('/videos/:id', async (req, res) => {
     await database.delete(videoId)
 
     return res.status(204).send()
+})
+
+server.post('/auth/register', async (req, res) => {
+    const {email, password} = req.body
+
+    if(!email || !password) {
+        return res.status(401).send({msg: "Campos de email e senha obrigatórios"})
+    }
+
+    const users = await database.verifyUsers({email})
+    
+    if (users.length >= 1) {
+        return res.status(404).send({msg: "Email digitado já existente."})
+    }
+
+    const salt = await bcrypt.genSalt(12)
+    const pwHash = await bcrypt.hash(password, salt)
+
+    const createUser = await database.createUsers({email, pwHash})
+
+
+    return res.status(201).send({msg: createUser})
+})
+
+server.post('/auth/login', async (req, res) => {
+    const {email, password} = req.body
+
+    if(!email || !password) {
+        return res.status(401).send({msg: "Campos de email e senha obrigatórios"})
+    }
+
+    const users = await database.verifyUsers({email})
+    
+    if (users.length < 1) {
+        return res.status(404).send({msg: "Email inválido."})
+    }
+
+    const checkPassword = await bcrypt.compare(password, users[0].password)
+   
+    if (!checkPassword) {
+        return res.status(401).send({msg: 'Senha inválida! Tente novamente!'})
+    }
+
+    try {
+        //const secret = process.env.SECRET
+        const token = server.jwt.sign({id: users[0].id}, {expiresIn: 300})
+
+        return res.status(201).send({auth: true, token})
+    } catch (err){
+        return res.status(401).send({msg: 'Não autorizado.'})
+    }   
+})
+
+server.get('/validateToken', {onRequest: [server.authenticate]}, async (req, res) => {
+    return req.user
 })
 
 server.listen({

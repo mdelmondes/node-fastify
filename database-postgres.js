@@ -15,6 +15,28 @@ export class DatabasePostgres {
         return videos
     }
 
+    async verifyUsers(user){
+        const {email} = user
+        let users
+        
+        users = await sql`select * from users where email = ${email}`
+
+        return users
+    }
+
+    async createUsers(user){
+        const {email, pwHash} = user
+        let users
+        
+        try {        
+            users = await sql`insert into users (email, password) values (${email}, ${pwHash})`
+        } catch (error){
+            return 'Erro ao cadastrar o usuário. Entre em contato com o responsável'
+        }
+
+        return 'Usuário cadastrado com sucesso'
+    }
+
     async create(video) {
         const videoId = randomUUID()
         const {title, description, duration} = video
