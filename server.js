@@ -2,6 +2,7 @@
 import { DatabasePostgres } from "./database-postgres.js"
 import { fastify } from "fastify"
 import fastifyJwt from '@fastify/jwt'
+import cors from "@fastify/cors"
 import bcrypt from "bcrypt"
 
 
@@ -10,6 +11,10 @@ const server = fastify()
 
 server.register(fastifyJwt, {
     secret: process.env.SECRET
+})
+
+server.register(cors, {
+    origin: true
 })
 
 server.decorate("authenticate", async (req, res) => {
@@ -111,8 +116,12 @@ server.post('/auth/login', async (req, res) => {
     }   
 })
 
-server.get('/validateToken', {onRequest: [server.authenticate]}, async (req, res) => {
+server.post('/validateToken', {onRequest: [server.authenticate]}, async (req, res) => {
     return req.user
+})
+
+server.post('/logout', async (req, res) => {
+    return true
 })
 
 server.listen({
