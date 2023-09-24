@@ -25,13 +25,13 @@ export class DatabasePostgres {
     }
 
     async createUsers(user){
-        const {email, pwHash} = user
+        const {email, username, pwHash} = user
         let users
         
         try {        
-            users = await sql`insert into users (email, password) values (${email}, ${pwHash})`
+            users = await sql`insert into users (email, username, status, password) values (${email}, ${username},true, ${pwHash})`
         } catch (error){
-            return 'Erro ao cadastrar o usuário. Entre em contato com o responsável'
+            return 'Erro ao cadastrar o usuário. Entre em contato com o responsável!'
         }
 
         return 'Usuário cadastrado com sucesso'

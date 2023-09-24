@@ -66,22 +66,22 @@ server.delete('/videos/:id', async (req, res) => {
 })
 
 server.post('/auth/register', async (req, res) => {
-    const {email, password} = req.body
+    const {email, username, password} = req.body
 
-    if(!email || !password) {
-        return res.status(401).send({msg: "Campos de email e senha obrigatórios"})
+    if(!email || !password || !username) {
+        return res.status(401).send({msg: "Todos os campos são obrigatórios!"})
     }
 
     const users = await database.verifyUsers({email})
     
     if (users.length >= 1) {
-        return res.status(404).send({msg: "Email digitado já existente."})
+        return res.status(404).send({msg: "Email digitado já existe."})
     }
 
     const salt = await bcrypt.genSalt(12)
     const pwHash = await bcrypt.hash(password, salt)
 
-    const createUser = await database.createUsers({email, pwHash})
+    const createUser = await database.createUsers({email, username, pwHash})
 
 
     return res.status(201).send({msg: createUser})
@@ -108,7 +108,7 @@ server.post('/auth/login', async (req, res) => {
 
     try {
         //const secret = process.env.SECRET
-        const token = server.jwt.sign({id: users[0].id}, {expiresIn: 300})
+        const token = server.jwt.sign({email: users[0].email}, {expiresIn: 300})
 
         return res.status(201).send({auth: true, token})
     } catch (err){
@@ -117,7 +117,10 @@ server.post('/auth/login', async (req, res) => {
 })
 
 server.post('/validateToken', {onRequest: [server.authenticate]}, async (req, res) => {
-    return req.user
+    const {email} = req.user
+    const users = await database.verifyUsers({email})
+
+    return users
 })
 
 server.post('/logout', async (req, res) => {
