@@ -110,7 +110,7 @@ server.post('/auth/login', async (req, res) => {
         //const secret = process.env.SECRET
         const token = server.jwt.sign({email: users[0].email}, {expiresIn: 300})
 
-        return res.status(201).send({auth: true, token})
+        return res.status(201).send({auth: true, token, user: users})
     } catch (err){
         return res.status(401).send({msg: 'Não autorizado.'})
     }   
