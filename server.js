@@ -69,13 +69,13 @@ server.post('/auth/register', async (req, res) => {
     const {email, username, password} = req.body
 
     if(!email || !password || !username) {
-        return res.status(401).send({msg: "Todos os campos são obrigatórios!"})
+        return res.status(201).send({statusCode: 422, msg: "Todos os campos são obrigatórios!"})
     }
 
     const users = await database.verifyUsers({email})
     
     if (users.length >= 1) {
-        return res.status(404).send({msg: "Email digitado já existe."})
+        return res.status(201).send({statusCode: 409, msg: "Email informado já está cadastrado."})
     }
 
     const salt = await bcrypt.genSalt(12)
@@ -83,27 +83,28 @@ server.post('/auth/register', async (req, res) => {
 
     const createUser = await database.createUsers({email, username, pwHash})
 
-
-    return res.status(201).send({msg: createUser})
+    if (createUser) {
+        return res.status(201).send({statusCode: 201, msg: "Usuário cadastrado com sucesso"})
+    }
 })
 
 server.post('/auth/login', async (req, res) => {
     const {email, password} = req.body
 
     if(!email || !password) {
-        return res.status(401).send({msg: "Campos de email e senha obrigatórios"})
+        return res.status(201).send({msg: "Campos de email e senha obrigatórios"})
     }
 
     const users = await database.verifyUsers({email})
     
     if (users.length < 1) {
-        return res.status(404).send({msg: "Email inválido."})
+        return res.status(201).send({msg: "Email inválido."})
     }
 
     const checkPassword = await bcrypt.compare(password, users[0].password)
    
     if (!checkPassword) {
-        return res.status(401).send({msg: 'Senha inválida! Tente novamente!'})
+        return res.status(201).send({msg: 'Senha inválida! Tente novamente!'})
     }
 
     try {
@@ -112,7 +113,7 @@ server.post('/auth/login', async (req, res) => {
 
         return res.status(201).send({auth: true, token, user: users})
     } catch (err){
-        return res.status(401).send({msg: 'Não autorizado.'})
+        return res.status(201).send({msg: 'Não autorizado.'})
     }   
 })
 

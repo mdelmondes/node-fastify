@@ -34,7 +34,7 @@ export class DatabasePostgres {
             return 'Erro ao cadastrar o usuário. Entre em contato com o responsável!'
         }
 
-        return 'Usuário cadastrado com sucesso'
+        return true
     }
 
     async create(video) {
