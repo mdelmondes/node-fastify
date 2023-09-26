@@ -25,44 +25,44 @@ server.decorate("authenticate", async (req, res) => {
     }
 })
 
-server.post('/videos', {onRequest: [server.authenticate]}, async (req, res) => {
-    const {title, description, duration} = req.body
+server.post('/categories', async (req, res) => {
+    const {cat_name, cat_status} = req.body
     
-    await database.create({
-        title,
-        description,
-        duration,
+    const createCat = await database.createCategory({
+        cat_name,
+        cat_status
+    })
+
+    if (createCat) {
+        return res.status(201).send({statusCode: 201, msg: createCat})
+    }
+})
+
+server.get('/categories', async (req, res) => {
+    const search = req.query.search
+    const categories = await database.getCategory(search)
+
+    return categories
+})
+
+server.put('/categories/:id', async (req, res) => {
+    const {cat_name, cat_status} = req.body
+    const cat_id = req.params.id
+
+    await database.updateCategory(cat_id, {
+        cat_name,
+        cat_status
     })
 
     return res.status(201).send()
 })
 
-server.get('/videos', async (req, res) => {
-    const search = req.query.search
-    const videos = await database.list(search)
+server.delete('/categories/:id', async (req, res) => {
+    const cat_id = req.params.id
 
-    return videos
-})
+    await database.deleteCategory(cat_id)
 
-server.put('/videos/:id', async (req, res) => {
-    const {title, description, duration} = req.body
-    const videoId = req.params.id
-
-    await database.update(videoId, {
-        title,
-        description,
-        duration,
-    })
-
-    return res.status(204).send()
-})
-
-server.delete('/videos/:id', async (req, res) => {
-    const videoId = req.params.id
-
-    await database.delete(videoId)
-
-    return res.status(204).send()
+    return res.status(201).send()
 })
 
 server.post('/auth/register', async (req, res) => {

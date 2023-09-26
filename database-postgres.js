@@ -3,18 +3,6 @@ import { sql } from "./db.js"
 
 export class DatabasePostgres {
 
-    async list(search){
-        let videos
-
-        if (search){
-            videos = await sql`select * from videos where title ilike ${'%' + search + '%'}`
-        } else {
-            videos = await sql`select * from videos`
-        }
-
-        return videos
-    }
-
     async verifyUsers(user){
         const {email} = user
         let users
@@ -37,22 +25,39 @@ export class DatabasePostgres {
         return true
     }
 
-    async create(video) {
-        const videoId = randomUUID()
-        const {title, description, duration} = video
+    async getCategory(search){
+        let videos
 
-        await sql`insert into videos (id, title, description, duration) values (${videoId}, ${title}, ${description}, ${duration})`
+        if (search){
+            videos = await sql`select * from categoria where cat_name ilike ${'%' + search + '%'}`
+        } else {
+            videos = await sql`select * from categoria`
+        }
+
+        return videos
+    }
+
+    async createCategory(categoria) {
+        const {cat_name, cat_status} = categoria
+
+        try {
+            await sql`insert into categoria (cat_name, cat_status) values (${cat_name}, ${cat_status})`
+        } catch ({name, message}) {
+            return false
+        }
+
+        return true
        
     }
 
-    async update(id,  video) {
-        const {title, description, duration} = video
+    async updateCategory(id, categoria) {
+        const {cat_name, cat_status} = categoria
 
-        await sql`update videos set title = ${title}, description = ${description}, duration = ${duration} where id = ${id}`
+        await sql`update categoria set cat_name = ${cat_name}, cat_status = ${cat_status} where id = ${id}`
     }
 
-    async delete(id) {
-        await sql`delete from videos where id = ${id}`
+    async deleteCategory(id) {
+        await sql`delete from categoria where id = ${id}`
        
     }
 }
